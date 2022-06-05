@@ -14,8 +14,21 @@
 
 const axios = require("axios")
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
+const { convert } = require('html-to-text');
+
 
 const POST_NODE_TYPE = `Post`
+
+
+function chunkArray(arr, value) {
+  const finalArray = [];
+  if (arr?.length) {
+      for (let i = 0; i < arr.length; i += value) {
+          finalArray.push(arr.slice(i, value + i));
+      }
+  }
+  return finalArray;
+}
 
 exports.sourceNodes = async ({
   actions,
@@ -26,11 +39,29 @@ exports.sourceNodes = async ({
   const { createNode } = actions
   const data = await axios
     .get("https://www.thecocktaildb.com/api/json/v1/1/filter.php?c=Cocktail")
-    .then(response =>
-      response?.data?.drinks?.forEach(post => {
+    .then((response) => {
+      response?.data?.drinks?.forEach(async post => {
+        let url = `https://en.wikipedia.org/w/api.php?action=parse&section=0&prop=text&format=json&page=${post.strDrink}`
+        let informationData = await axios.get(encodeURI(url))
+
+        let informationHtml 
+        if(informationData?.data?.parse?.text){
+          informationHtml = Object.values(informationData?.data?.parse?.text)[0]
+        }
+       
+        const text =  convert(informationHtml) 
+
+       let reformedText = text.substring(0, 100).concat('...')
+
+
+       
+
         createNode({
           ...post,
           id: createNodeId(`${POST_NODE_TYPE}-${post.idDrink}`),
+          furtherInformationHTML: informationData?.data?.parse?.text,
+          furtherInformationExcerpt: reformedText,
+          relatedDrinks: chunkArray(response?.data?.drinks, 3),
           parent: null,
           children: [],
           internal: {
@@ -40,7 +71,7 @@ exports.sourceNodes = async ({
           },
         })
       })
-    )
+   })
   return
 }
 

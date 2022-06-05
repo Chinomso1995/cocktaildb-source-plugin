@@ -2,6 +2,8 @@ import React from "react"
 import { graphql } from "gatsby"
 import { GatsbyImage } from "gatsby-plugin-image"
 const Home = ({ data }) => {
+
+  console.log(data)
   return (
     <div
       style={{
@@ -20,7 +22,7 @@ const Home = ({ data }) => {
           gridGap: 16,
         }}
       >
-        {data?.allPost?.edges?.map(post => {
+        {data?.allPost?.edges?.map((post, index) => {
           return (
             <div
               key={post?.node?.idDrink}
@@ -41,6 +43,22 @@ const Home = ({ data }) => {
               <span style={{ textAlign: "center", marginTop: "20px" }}>
                 {post?.node?.strDrink}
               </span>
+              <div 
+              style={{ textAlign: "center", marginTop: "20px" }}
+              dangerouslySetInnerHTML={{__html: `${post?.node?.furtherInformationExcerpt}`}}
+              />
+                
+             
+              <ul>
+                {
+                post?.node?.relatedDrinks[index > 35 ? 0 : index]?.map((item)=> (
+                  
+                  <li>
+                    {item?.strDrink}
+                  </li>
+                ))}
+
+              </ul>
             </div>
           )
         })}
@@ -64,6 +82,15 @@ export const query = graphql`
           idDrink
           strDrink
           strDrinkThumb
+          furtherInformationHTML {
+            _
+          }
+          furtherInformationExcerpt
+          relatedDrinks {
+            idDrink
+            strDrink
+            strDrinkThumb
+          }
         }
       }
     }
